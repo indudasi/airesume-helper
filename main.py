@@ -31,7 +31,8 @@ app.add_middleware(
 )
 
 # OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key="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")
+
 
 # Database
 Base = declarative_base()
@@ -129,3 +130,4 @@ async def export(bullets: str = Form(...)):
         pdf.multi_cell(0, 10, f"• {line}")
     pdf.output("resume.pdf")
     return {"status": "exported"}
+
