@@ -1,13 +1,3 @@
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
-
-templates = Jinja2Templates(directory="templates")
-
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -19,18 +9,19 @@ from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from fpdf import FPDF
+import os
 
-# Initialize FastAPI
+# FastAPI app
 app = FastAPI()
 
-# Serve HTML from templates folder
+# Serve templates
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# CORS
+# CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,9 +31,9 @@ app.add_middleware(
 )
 
 # OpenAI client
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Database setup
+# Database
 Base = declarative_base()
 engine = create_engine("sqlite:///feedback.db")
 Session = sessionmaker(bind=engine)
@@ -56,7 +47,7 @@ class Feedback(Base):
 
 Base.metadata.create_all(engine)
 
-# Helpers
+# PDF/DOCX extract helpers
 def extract_text_from_pdf(path):
     pdf = fitz.open(path)
     return "".join([page.get_text() for page in pdf])
@@ -65,6 +56,7 @@ def extract_text_from_docx(path):
     doc = docx.Document(path)
     return "\n".join([p.text for p in doc.paragraphs])
 
+# Summarize function
 def summarize_resume(resume_text):
     prompt = f"Summarize this resume into professional bullet points:\n{resume_text}"
     res = client.chat.completions.create(
